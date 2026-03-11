@@ -70,5 +70,18 @@ app.use("/api/payment", require("./routes/paymentRoutes"));
 
 app.get("/", (req, res) => res.send("API Regular"));
 
+// GET /api/health/email  – diagnose SMTP config from production
+// Protect with a HEALTH_TOKEN env var to avoid exposing config publicly
+app.get("/api/health/email", async (req, res) => {
+  const token = req.query.token || req.headers["x-health-token"];
+  if (!process.env.HEALTH_TOKEN || token !== process.env.HEALTH_TOKEN) {
+    return res.status(401).json({ ok: false, error: "Unauthorized" });
+  }
+
+  const { verifyEmailConfig } = require("./services/notificationService");
+  const result = await verifyEmailConfig();
+  res.status(result.ok ? 200 : 500).json(result);
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log("running"));

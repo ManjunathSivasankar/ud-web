@@ -48,6 +48,10 @@
     @apply bg-secondary/50 backdrop-blur-md border border-white/5 rounded-lg overflow-hidden;
   }
 
+  .glass-Card {
+    @apply bg-secondary/80 backdrop-blur-md border border-white/10 rounded-xl overflow-hidden;
+  }
+
   .nav-link {
     @apply relative text-accent/70 font-sans font-medium hover:text-white transition-colors duration-200 after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[1px] after:bg-white after:transition-all hover:after:w-full tracking-wide;
   }

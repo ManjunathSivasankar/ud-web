@@ -67,7 +67,7 @@ const ProductDetails = () => {
   };
 
   return (
-    <div className="pt-32 pb-24 bg-[#f6f6f6] text-primary min-h-screen">
+    <div className="pt-28 md:pt-32 pb-16 md:pb-24 bg-[#f6f6f6] text-primary min-h-screen overflow-x-hidden">
       <AnimatePresence>
         {isAdded && (
           <motion.div
@@ -86,7 +86,7 @@ const ProductDetails = () => {
         )}
       </AnimatePresence>
       <div className="container mx-auto px-6">
-        <div className="flex flex-col lg:flex-row gap-16">
+        <div className="flex flex-col lg:flex-row gap-8 md:gap-16">
           {/* Left: Image Gallery */}
           <div className="lg:w-3/5 flex gap-4">
             {/* Thumbnails */}
@@ -151,11 +151,11 @@ const ProductDetails = () => {
 
             {/* Size Selector */}
             <div className="mb-12">
-              <div className="flex items-center justify-between mb-8 pb-8 border-b border-primary/10">
-                <span className="text-3xl font-sans font-bold text-primary">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 pb-6 border-b border-primary/10">
+                <span className="text-2xl sm:text-3xl font-sans font-bold text-primary">
                   ₹{product.price}
                 </span>
-                <span className="text-[10px] uppercase tracking-widest font-heading font-black text-primary/30">
+                <span className="text-[10px] uppercase tracking-widest font-heading font-black text-primary/30 mt-1 sm:mt-0">
                   In Stock / Ready to Ship
                 </span>
               </div>
@@ -173,7 +173,7 @@ const ProductDetails = () => {
             </div>
 
             {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-12">
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 mb-8 md:mb-12">
               <button
                 onClick={handleAddToCart}
                 className="flex-1 bg-primary text-white py-5 flex items-center justify-center gap-3 font-heading font-black rounded-sm transition-all hover:bg-primary/90 hover:-translate-y-0.5 hover:shadow-xl group"
@@ -193,7 +193,7 @@ const ProductDetails = () => {
             </div>
 
             {/* Features */}
-            <div className="space-y-6 pt-12 border-t border-primary/5">
+            <div className="space-y-4 md:space-y-6 pt-8 md:pt-12 border-t border-primary/5">
               <div className="flex items-start gap-4">
                 <Truck size={20} className="text-primary/30" />
                 <div>
@@ -232,8 +232,8 @@ const ProductDetails = () => {
         </div>
 
         {/* Detailed Info Tabs */}
-        <div className="mt-32 border-t border-primary/5 pt-16">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
+        <div className="mt-12 md:mt-32 border-t border-primary/5 pt-10 md:pt-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-16">
             <div>
               <h3 className="text-sm font-black uppercase tracking-[0.2em] mb-6">
                 Product Guidance

@@ -9,7 +9,11 @@ const nodemailer = require("nodemailer");
 
 const createTransporter = () => {
   const smtpPort = Number(process.env.SMTP_PORT || 587);
-  const smtpPass = (process.env.SMTP_PASS || "").replace(/\s+/g, "");
+  // Strip surrounding whitespace AND quotes (some deployment panels wrap values in quotes)
+  const smtpPass = (process.env.SMTP_PASS || "")
+    .trim()
+    .replace(/^["']|["']$/g, "")
+    .replace(/\s+/g, "");
 
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST,
@@ -29,10 +33,8 @@ const createTransporter = () => {
 let transporterCache = null;
 
 const getTransporter = () => {
-  if (!transporterCache) {
-    transporterCache = createTransporter();
-  }
-  return transporterCache;
+  // Always create a fresh transporter — avoids stale/broken cached connections in production.
+  return createTransporter();
 };
 
 const hasSmtpConfig = () => {
@@ -61,8 +63,15 @@ const verifyConnection = async () => {
   try {
     await transporter.verify();
     console.log("[EMAIL] SMTP server is ready to send messages");
+    console.log(
+      `[EMAIL] Config: host=${process.env.SMTP_HOST} port=${process.env.SMTP_PORT} user=${process.env.SMTP_USER}`,
+    );
   } catch (error) {
     console.error("[EMAIL] SMTP verification error:", error.message);
+    console.error("[EMAIL] Error code:", error.code);
+    console.error(
+      `[EMAIL] Config: host=${process.env.SMTP_HOST} port=${process.env.SMTP_PORT} user=${process.env.SMTP_USER} passSet=${!!(process.env.SMTP_PASS || "").trim()}`,
+    );
     console.error(
       "[EMAIL] Check deployment env vars, SMTP credentials, firewall/port access, and provider security settings.",
     );
@@ -292,10 +301,55 @@ const sendOrderDispatchedEmail = async (order) => {
   }
 };
 
+// Export for health-check route in server.js
+const verifyEmailConfig = async () => {
+  if (!hasSmtpConfig()) {
+    return {
+      ok: false,
+      error: "Missing SMTP env vars",
+      config: {
+        host: process.env.SMTP_HOST || "(not set)",
+        port: process.env.SMTP_PORT || "(not set)",
+        user: process.env.SMTP_USER || "(not set)",
+        adminEmail: process.env.ADMIN_EMAIL || "(not set)",
+        passSet: !!(process.env.SMTP_PASS || "").trim(),
+      },
+    };
+  }
+
+  const transporter = createTransporter();
+  try {
+    await transporter.verify();
+    return {
+      ok: true,
+      config: {
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT || 587),
+        user: process.env.SMTP_USER,
+        adminEmail: process.env.ADMIN_EMAIL,
+      },
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err.message,
+      code: err.code,
+      config: {
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT || 587),
+        user: process.env.SMTP_USER,
+        adminEmail: process.env.ADMIN_EMAIL,
+        passSet: !!(process.env.SMTP_PASS || "").trim(),
+      },
+    };
+  }
+};
+
 module.exports = {
   sendOrderInitiatedEmail,
   sendUserClaimsPaidEmail,
   sendOrderConfirmedEmail,
   sendOrderDispatchedEmail,
   sendWhatsappAlert,
+  verifyEmailConfig,
 };

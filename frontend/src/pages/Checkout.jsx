@@ -125,7 +125,7 @@ const Checkout = () => {
 
   if (Cart.length === 0) {
     return (
-      <div className="pt-48 pb-24 min-h-[70vh] flex flex-col items-center justify-center container mx-auto px-6 text-center">
+      <div className="pt-48 pb-24 min-h-[70vh] flex flex-col items-center justify-center container mx-auto px-6 text-center bg-primary text-white">
         <h1 className="text-4xl font-black tracking-tighter mb-4">
           YOUR GarageT IS EMPTY.
         </h1>
@@ -140,17 +140,17 @@ const Checkout = () => {
   }
 
   return (
-    <div className="pt-32 pb-24 min-h-screen">
+    <div className="pt-28 md:pt-32 pb-24 min-h-screen bg-primary text-white">
       <div className="container mx-auto px-6 max-w-6xl">
         <div className="flex items-center gap-4 mb-12">
           <button
             onClick={() => navigate(-1)}
             type="button"
-            className="flex items-center justify-center w-10 h-10 rounded-full border border-white/10 hover:bg-white/5 transition-colors"
+            className="flex items-center justify-center w-10 h-10 rounded-full border border-white/20 hover:bg-white/10 transition-colors"
           >
             <ChevronLeft size={18} />
           </button>
-          <h1 className="text-4xl sm:text-5xl font-black tracking-tighter uppercase">
+          <h1 className="text-3xl sm:text-5xl font-black tracking-tighter uppercase">
             Checkout
           </h1>
         </div>
@@ -158,7 +158,7 @@ const Checkout = () => {
         <div className="flex flex-col lg:flex-row gap-16">
           {/* Shipping Form */}
           <div className="lg:w-2/3">
-            <h2 className="text-lg font-black uppercase tracking-widest mb-8 pb-4 border-b border-white/5">
+            <h2 className="text-lg font-black uppercase tracking-widest mb-8 pb-4 border-b border-white/10">
               Shipping Details
             </h2>
 
@@ -274,8 +274,8 @@ const Checkout = () => {
 
           {/* Order Summary & Payment Button */}
           <div className="lg:w-1/3">
-            <div className="glass-Card p-8 sticky top-32">
-              <h2 className="text-lg font-black uppercase tracking-widest mb-8 border-b border-white/5 pb-4">
+            <div className="bg-secondary border border-white/10 rounded-xl p-6 md:p-8 lg:sticky lg:top-32">
+              <h2 className="text-lg font-black uppercase tracking-widest mb-6 md:mb-8 border-b border-white/10 pb-4">
                 Your Order
               </h2>
 
@@ -290,13 +290,13 @@ const Checkout = () => {
                       />
                     </div>
                     <div className="flex-grow flex flex-col justify-center">
-                      <p className="text-xs font-bold uppercase truncate max-w-[150px]">
+                      <p className="text-xs font-bold uppercase truncate max-w-[150px] text-white">
                         {item.name}
                       </p>
-                      <p className="text-[10px] text-accent/50 uppercase">
+                      <p className="text-[10px] text-white/50 uppercase">
                         Qty: {item.quantity} | Size: {item.size}
                       </p>
-                      <p className="text-xs font-bold mt-1">
+                      <p className="text-xs font-bold mt-1 text-white">
                         ₹{(item.price * item.quantity).toFixed(2)}
                       </p>
                     </div>
@@ -304,31 +304,31 @@ const Checkout = () => {
                 ))}
               </div>
 
-              <div className="space-y-4 mb-8 pt-4 border-t border-white/5">
+              <div className="space-y-4 mb-8 pt-4 border-t border-white/10">
                 <div className="flex justify-between text-sm">
-                  <span className="text-accent/40 uppercase tracking-widest font-bold">
+                  <span className="text-white/60 uppercase tracking-widest font-bold">
                     Product Price
                   </span>
-                  <span className="font-bold">₹{subtotal.toFixed(2)}</span>
+                  <span className="font-bold text-white">₹{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-accent/40 uppercase tracking-widest font-bold">
-                    Delivery / Shipping Charges
+                  <span className="text-white/60 uppercase tracking-widest font-bold">
+                    Delivery
                   </span>
-                  <span className="font-bold">₹{shipping.toFixed(2)}</span>
+                  <span className="font-bold text-white">₹{shipping.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-lg font-black pt-4 border-t border-white/10 mt-4">
-                  <span className="uppercase tracking-widest">Total</span>
+                  <span className="uppercase tracking-widest text-white">Total</span>
                   <span className="text-white">₹{total.toFixed(2)}</span>
                 </div>
               </div>
 
-              <div className="bg-accent/5 p-4 rounded-sm mb-6 flex items-start gap-3">
+              <div className="bg-white/5 p-4 rounded-sm mb-6 flex items-start gap-3">
                 <ShieldCheck
                   className="text-green-400 mt-0.5 flex-shrink-0"
                   size={20}
                 />
-                <p className="text-[10px] text-accent/60 uppercase tracking-widest leading-relaxed">
+                <p className="text-[10px] text-white/60 uppercase tracking-widest leading-relaxed">
                   Secure UPI payment via Google Pay, PhonePe, Paytm, or any
                   UPI-enabled app. No card details required.
                 </p>
