@@ -55,7 +55,7 @@ const Cart = () => {
     <div className="pt-32 pb-24 min-h-screen bg-[#f6f6f6] text-primary">
       <div className="container mx-auto px-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-12 gap-4">
-          <h1 className="text-5xl font-black tracking-tighter uppercase">
+          <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase">
             Shopping Bag
           </h1>
           {Cart.length > 0 && (
@@ -94,10 +94,10 @@ const Cart = () => {
 
                     {/* Item Info */}
                     <div className="flex-grow flex flex-col gap-1">
-                      <h3 className="text-sm font-black uppercase tracking-tight text-white">
+                      <h3 className="text-sm font-black uppercase tracking-tight text-primary">
                         {item.name}
                       </h3>
-                      <p className="text-[10px] text-accent/40 uppercase tracking-widest font-black mb-2">
+                      <p className="text-[10px] text-primary/50 uppercase tracking-widest font-black mb-2">
                         {item.category} / Size: {item.size}
                       </p>
                       <div className="flex items-center gap-4 mt-2">
@@ -183,7 +183,7 @@ const Cart = () => {
                 </div>
                 <div className="flex justify-between text-lg font-black pt-4 border-t border-white/10 mt-4">
                   <span className="uppercase tracking-widest">Total</span>
-                  <span className="text-white">₹{total.toFixed(2)}</span>
+                  <span className="text-primary">₹{total.toFixed(2)}</span>
                 </div>
               </div>
 

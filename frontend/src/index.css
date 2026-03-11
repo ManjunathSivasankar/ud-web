@@ -87,3 +87,12 @@
 .page-transition {
   @apply transition-all duration-500 ease-in-out;
 }
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

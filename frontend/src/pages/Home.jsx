@@ -43,14 +43,14 @@ const Home = () => {
       <Hero />
 
       {/* New Arrivals Section (Light Theme) */}
-      <section className="theme-light py-32 z-10 relative shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
+      <section className="theme-light py-20 md:py-32 z-10 relative shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
         <div className="container mx-auto px-6">
-          <div className="flex justify-between items-end mb-16">
+          <div className="flex justify-between items-end mb-10 md:mb-16">
             <div>
               <span className="text-muted uppercase tracking-[0.3em] text-[10px] font-heading font-bold block mb-2">
                 Recently Dropped
               </span>
-              <h2 className="text-4xl md:text-5xl font-heading font-black tracking-tighter uppercase relative inline-block">
+              <h2 className="text-3xl md:text-5xl font-heading font-black tracking-tighter uppercase relative inline-block">
                 New Arrivals
                 <span className="absolute -bottom-2 left-0 w-1/3 h-1 bg-primary"></span>
               </h2>
@@ -67,7 +67,7 @@ const Home = () => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-8">
             {loading
               ? [1, 2, 3, 4].map((n) => (
                   <div
@@ -80,7 +80,7 @@ const Home = () => {
                     key={product._id || product.id}
                     className={
                       index === 0
-                        ? "col-span-2 md:col-span-2"
+                        ? "col-span-1 md:col-span-2"
                         : "col-span-1 border border-primary/5 rounded-xl block"
                     }
                   >
@@ -94,9 +94,9 @@ const Home = () => {
       {/* Collections Section */}
       <section
         id="collections-section"
-        className="py-32 container mx-auto px-6"
+        className="py-20 md:py-32 container mx-auto px-6"
       >
-        <div className="mb-16 text-center">
+        <div className="mb-10 md:mb-16 text-center">
           <span className="text-white/40 uppercase tracking-[0.3em] text-[10px] font-heading font-bold block mb-2">
             Curated Drops
           </span>
@@ -104,7 +104,7 @@ const Home = () => {
             The Collections
           </h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
           {collections.map((col, index) => (
             <motion.div
               key={col._id || col.collectionId || index}
@@ -112,7 +112,7 @@ const Home = () => {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1, duration: 0.6 }}
               viewport={{ once: true }}
-              className="group relative aspect-[4/3] bg-secondary rounded-2xl overflow-hidden shadow-xl"
+              className="group relative aspect-[3/4] md:aspect-[4/3] bg-secondary rounded-xl md:rounded-2xl overflow-hidden shadow-xl"
             >
               <Link
                 to={`/category/${col.collectionId || col.id}`}
@@ -129,13 +129,13 @@ const Home = () => {
               {/* Overlays */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10 z-10" />
               {/* Overlay Content */}
-              <div className="absolute bottom-8 left-8 z-20 pr-8">
-                <h3 className="text-2xl font-heading font-black tracking-tight uppercase text-white group-hover:translate-x-2 transition-transform duration-300 mb-2">
+              <div className="absolute bottom-4 left-4 md:bottom-8 md:left-8 z-20 pr-4 md:pr-8">
+                <h3 className="text-base md:text-2xl font-heading font-black tracking-tight uppercase text-white group-hover:translate-x-2 transition-transform duration-300 mb-2">
                   {col.name}
                 </h3>
                 <div className="h-[2px] w-0 bg-white group-hover:w-12 transition-all duration-500 ease-out"></div>
               </div>
-              <div className="absolute right-8 bottom-8 z-20 w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center -translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300">
+              <div className="hidden md:flex absolute right-8 bottom-8 z-20 w-10 h-10 rounded-full bg-white/10 backdrop-blur-md items-center justify-center -translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300">
                 <ArrowRight size={16} className="text-white" />
               </div>
             </motion.div>

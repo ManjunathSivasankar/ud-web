@@ -39,16 +39,32 @@ const Collection = () => {
   }, [id]);
 
   return (
-    <div className="bg-[#f6f6f6] text-primary min-h-screen pt-32 pb-24 font-sans selection:bg-primary/20">
+    <div className="bg-[#f6f6f6] text-primary min-h-screen pt-28 md:pt-32 pb-20 md:pb-24 font-sans selection:bg-primary/20">
       <div className="container mx-auto px-6 relative z-10">
         {/* Header */}
-        <div className="mb-12">
-          <h1 className="text-5xl md:text-7xl font-heading font-black tracking-tighter uppercase mb-4 text-primary">
+        <div className="mb-8 md:mb-12">
+          <h1 className="text-3xl md:text-7xl font-heading font-black tracking-tighter uppercase mb-3 md:mb-4 text-primary">
             {id ? id.replace("-", " ") : "All Products"}
           </h1>
           <p className="text-primary/60 text-sm uppercase tracking-[0.2em] font-heading font-bold">
             {products.length} Products Found
           </p>
+        </div>
+
+        {/* Mobile Toolbar */}
+        <div className="mb-6 p-3 border border-primary/10 rounded-lg bg-white/70 flex items-center justify-between md:hidden">
+          <span className="text-[10px] text-primary/50 font-heading font-bold uppercase tracking-widest">
+            Sort By
+          </span>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="bg-transparent text-xs font-sans font-bold uppercase tracking-widest border-none outline-none cursor-pointer focus:ring-0 text-primary/90"
+          >
+            <option value="newest">Newest</option>
+            <option value="price-low">Price: Low to High</option>
+            <option value="price-high">Price: High to Low</option>
+          </select>
         </div>
 
         {/* Toolbar */}
@@ -95,7 +111,7 @@ const Collection = () => {
                 ))}
               </div>
             ) : products.length > 0 ? (
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-8">
                 {products.map((product) => (
                   <ProductCard
                     key={product._id || product.id}

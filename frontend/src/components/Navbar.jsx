@@ -22,6 +22,7 @@ const Navbar = () => {
   const { Cart } = useCart();
   const { collections } = useCollection();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -32,6 +33,19 @@ const Navbar = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    // Lock body scroll while the mobile drawer is open to avoid jank.
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
 
   const isHome = pathname === "/";
 
@@ -53,7 +67,7 @@ const Navbar = () => {
 
   return (
     <nav
-      className={`fixed w-full transition-all duration-500 ${
+      className={`fixed w-full transition-[padding,background-color,border-color,box-shadow,backdrop-filter] duration-300 ${
         isOpen
           ? "z-[1000] bg-white"
           : "z-50 backdrop-blur-md " +
@@ -202,6 +216,7 @@ const Navbar = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.16, ease: "easeOut" }}
             onClick={() => setIsOpen(false)}
             className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[998] md:hidden"
           />
@@ -215,7 +230,7 @@ const Navbar = () => {
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
             className="fixed top-0 right-0 bottom-0 w-[80%] max-w-[400px] z-[999] flex flex-col p-8 md:hidden bg-white text-[#141417] shadow-2xl"
           >
             <div className="flex justify-between items-center mb-16">

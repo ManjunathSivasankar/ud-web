@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ArrowRight, Instagram, Youtube } from "lucide-react";
+import { useReducedMotion } from "framer-motion";
 
 // Hardcoded testimonials removed, moving to dynamic fetch
 
@@ -9,8 +10,17 @@ import { useCollection } from "../context/CollectionContext";
 
 const Hero = () => {
   const { collections } = useCollection();
+  const shouldReduceMotion = useReducedMotion();
+  const [isMobile, setIsMobile] = useState(false);
 
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const updateMobileState = () => setIsMobile(mediaQuery.matches);
+    updateMobileState();
+
+    mediaQuery.addEventListener("change", updateMobileState);
+    return () => mediaQuery.removeEventListener("change", updateMobileState);
+  }, []);
 
   // Create a looped array of whatever collections we have from backend
   const marqueeItems =
@@ -21,14 +31,16 @@ const Hero = () => {
       {/* ========== BACKGROUND ANIMATION ========== */}
       <div className="absolute inset-0 z-0 pointer-events-none opacity-40">
         <motion.div
-          animate={{
-            backgroundPosition: ["0px 0px", "0px -40px"],
-          }}
-          transition={{
-            repeat: Infinity,
-            duration: 4,
-            ease: "linear",
-          }}
+          animate={
+            !isMobile && !shouldReduceMotion
+              ? { backgroundPosition: ["0px 0px", "0px -40px"] }
+              : { backgroundPosition: "0px 0px" }
+          }
+          transition={
+            !isMobile && !shouldReduceMotion
+              ? { repeat: Infinity, duration: 4, ease: "linear" }
+              : { duration: 0 }
+          }
           className="w-full h-full"
           style={{
             backgroundImage:
@@ -45,7 +57,7 @@ const Hero = () => {
           scale: [1, 1.1, 1],
         }}
         transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
-        className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-white/5 rounded-full blur-[120px] pointer-events-none z-0"
+        className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-white/5 rounded-full blur-[120px] pointer-events-none z-0 hidden md:block"
       />
       <motion.div
         animate={{
@@ -59,7 +71,7 @@ const Hero = () => {
           ease: "easeInOut",
           delay: 1,
         }}
-        className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-white/5 rounded-full blur-[150px] pointer-events-none z-0"
+        className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-white/5 rounded-full blur-[150px] pointer-events-none z-0 hidden md:block"
       />
 
       {/* ========== FOREGROUND CONTENT ========== */}
@@ -92,9 +104,9 @@ const Hero = () => {
       <div className="w-full relative z-20 flex flex-col items-center">
         <div className="text-center mb-0 px-6 absolute top-0 md:top-8 z-40 pointer-events-none mix-blend-difference w-full">
           <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+            initial={!shouldReduceMotion ? { opacity: 0, y: 20 } : false}
+            animate={!shouldReduceMotion ? { opacity: 1, y: 0 } : undefined}
+            transition={!shouldReduceMotion ? { delay: 0.1 } : undefined}
             className="text-[3.5rem] leading-[0.8] md:text-8xl xl:text-[9rem] font-heading font-black tracking-tighter text-white drop-shadow-2xl"
           >
             OWN THE <br className="md:hidden" /> MOMENT.
@@ -107,7 +119,7 @@ const Hero = () => {
           <div className="absolute inset-y-0 left-0 w-8 md:w-32 bg-gradient-to-r from-primary to-transparent z-10 pointer-events-none"></div>
           <div className="absolute inset-y-0 right-0 w-8 md:w-32 bg-gradient-to-l from-primary to-transparent z-10 pointer-events-none"></div>
 
-          {collections?.length > 0 ? (
+          {collections?.length > 0 && !isMobile ? (
             <motion.div
               className="flex gap-4 md:gap-6 w-max pl-6"
               drag="x"
@@ -180,6 +192,32 @@ const Hero = () => {
                 );
               })}
             </motion.div>
+          ) : null}
+
+          {collections?.length > 0 && isMobile ? (
+            <div className="flex gap-4 pl-4 pr-4 overflow-x-auto snap-x snap-mandatory no-scrollbar">
+              {collections.map((item, index) => (
+                <Link
+                  to={`/category/${item.collectionId || item.name.toLowerCase().replace(/\s+/g, "-")}`}
+                  key={`${item._id || item.name}-${index}`}
+                  className="block outline-none snap-start"
+                >
+                  <div className="relative w-[210px] h-[300px] rounded-2xl overflow-hidden shadow-lg flex-shrink-0 bg-secondary/20">
+                    <img
+                      src={item.image || "https://via.placeholder.com/600x800"}
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none" />
+                    <div className="absolute inset-0 flex items-end p-5 pointer-events-none">
+                      <h3 className="text-white font-heading font-black text-lg uppercase tracking-tighter drop-shadow-lg">
+                        {item.name}
+                      </h3>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
           ) : null}
         </div>
       </div>

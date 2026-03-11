@@ -8,27 +8,63 @@ const nodemailer = require("nodemailer");
  */
 
 const createTransporter = () => {
+  const smtpPort = Number(process.env.SMTP_PORT || 587);
+  const smtpPass = (process.env.SMTP_PASS || "").replace(/\s+/g, "");
+
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT, // 587 for TLS, 465 for SSL
-    secure: process.env.SMTP_PORT == 465,
+    port: smtpPort, // 587 for TLS, 465 for SSL
+    secure: smtpPort === 465,
+    requireTLS: smtpPort === 587,
     auth: {
       user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      pass: smtpPass,
     },
+    connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT || 15000),
+    greetingTimeout: Number(process.env.SMTP_GREETING_TIMEOUT || 10000),
+    socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT || 20000),
   });
+};
+
+let transporterCache = null;
+
+const getTransporter = () => {
+  if (!transporterCache) {
+    transporterCache = createTransporter();
+  }
+  return transporterCache;
+};
+
+const hasSmtpConfig = () => {
+  const required = ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS"];
+  const missing = required.filter((key) => !process.env[key]);
+
+  if (missing.length > 0) {
+    console.warn(
+      `[EMAIL] Missing SMTP environment variables: ${missing.join(", ")}. Email notifications are disabled.`,
+    );
+    return false;
+  }
+
+  return true;
+};
+
+const getFromAddress = () => {
+  return process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER;
 };
 
 // Verify transporter on startup
 const verifyConnection = async () => {
-  const transporter = createTransporter();
+  if (!hasSmtpConfig()) return;
+
+  const transporter = getTransporter();
   try {
     await transporter.verify();
-    console.log("📧 SMTP: Server is ready to take our messages");
+    console.log("[EMAIL] SMTP server is ready to send messages");
   } catch (error) {
-    console.error("📧 SMTP Verification Error:", error.message);
+    console.error("[EMAIL] SMTP verification error:", error.message);
     console.error(
-      "📧 Possible issues: Incorrect App Password, Port blocked, or DNS issue.",
+      "[EMAIL] Check deployment env vars, SMTP credentials, firewall/port access, and provider security settings.",
     );
   }
 };
@@ -64,11 +100,18 @@ const sendWhatsappAlert = async (message) => {
 
 const sendOrderInitiatedEmail = async (order) => {
   try {
-    const transporter = createTransporter();
+    if (!hasSmtpConfig()) return;
+
+    const transporter = getTransporter();
     const adminEmail = process.env.ADMIN_EMAIL;
 
+    if (!adminEmail) {
+      console.warn("[EMAIL] ADMIN_EMAIL is missing. Skipping order initiated email.");
+      return;
+    }
+
     const mailOptions = {
-      from: `"GarageT Payments" <${process.env.SMTP_USER}>`,
+      from: `"UrbanDos Payments" <${getFromAddress()}>`,
       to: adminEmail,
       subject: `🆕 New Order Initiated - ₹${order.totalAmount}`,
       html: `
@@ -106,22 +149,33 @@ const sendOrderInitiatedEmail = async (order) => {
     };
 
     await transporter.sendMail(mailOptions);
-    console.log("✅ Order initiated email sent to admin.");
+    console.log("[EMAIL] Order initiated email sent to admin.");
   } catch (error) {
-    console.error("❌ Error sending order initiated email:", error);
+    console.error(
+      "[EMAIL] Error sending order initiated email:",
+      error.code || error.message,
+    );
   }
 };
 
 const sendUserClaimsPaidEmail = async (order) => {
   try {
-    const transporter = createTransporter();
+    if (!hasSmtpConfig()) return;
+
+    const transporter = getTransporter();
     const adminEmail = process.env.ADMIN_EMAIL;
+
+    if (!adminEmail) {
+      console.warn("[EMAIL] ADMIN_EMAIL is missing. Skipping payment-claim email.");
+      return;
+    }
+
     const waLink = `https://wa.me/${order.customerDetails.phone.replace(/\D/g, "")}?text=${encodeURIComponent(
       `Hi ${order.customerDetails.name}, your order ${order._id.toString().slice(-8)} for ₹${order.totalAmount} has been confirmed! 🚀`,
     )}`;
 
     const mailOptions = {
-      from: `"GarageT Payments" <${process.env.SMTP_USER}>`,
+      from: `"UrbanDos Payments" <${getFromAddress()}>`,
       to: adminEmail,
       subject: `💰 Payment Confirmation Requested - ${order.customerDetails.name}`,
       html: `
@@ -144,15 +198,20 @@ const sendUserClaimsPaidEmail = async (order) => {
     };
 
     await transporter.sendMail(mailOptions);
-    console.log("✅ User claims paid email sent to admin.");
+    console.log("[EMAIL] Payment-claim email sent to admin.");
   } catch (error) {
-    console.error("❌ Error sending user claims paid email:", error);
+    console.error(
+      "[EMAIL] Error sending user claims paid email:",
+      error.code || error.message,
+    );
   }
 };
 
 const sendOrderConfirmedEmail = async (order) => {
   try {
-    const transporter = createTransporter();
+    if (!hasSmtpConfig()) return;
+
+    const transporter = getTransporter();
     const customerEmail =
       order.customerDetails?.email || order.shippingAddress?.email;
 
@@ -162,7 +221,7 @@ const sendOrderConfirmedEmail = async (order) => {
     }
 
     const mailOptions = {
-      from: `"UrbanDos" <${process.env.SMTP_USER}>`,
+      from: `"UrbanDos" <${getFromAddress()}>`,
       to: customerEmail,
       subject: `✅ Order Confirmed! #${order._id.toString().slice(-8)}`,
       html: `
@@ -182,15 +241,20 @@ const sendOrderConfirmedEmail = async (order) => {
     };
 
     await transporter.sendMail(mailOptions);
-    console.log(`✅ Confirmation email sent to customer: ${customerEmail}`);
+    console.log(`[EMAIL] Confirmation email sent to customer: ${customerEmail}`);
   } catch (error) {
-    console.error("❌ Error sending order confirmation email:", error);
+    console.error(
+      "[EMAIL] Error sending order confirmation email:",
+      error.code || error.message,
+    );
   }
 };
 
 const sendOrderDispatchedEmail = async (order) => {
   try {
-    const transporter = createTransporter();
+    if (!hasSmtpConfig()) return;
+
+    const transporter = getTransporter();
     const customerEmail =
       order.customerDetails?.email || order.shippingAddress?.email;
 
@@ -200,7 +264,7 @@ const sendOrderDispatchedEmail = async (order) => {
     }
 
     const mailOptions = {
-      from: `"UrbanDos" <${process.env.SMTP_USER}>`,
+      from: `"UrbanDos" <${getFromAddress()}>`,
       to: customerEmail,
       subject: `🚚 Your Order is being Prepared for Dispatch! #${order._id.toString().slice(-8)}`,
       html: `
@@ -219,9 +283,12 @@ const sendOrderDispatchedEmail = async (order) => {
     };
 
     await transporter.sendMail(mailOptions);
-    console.log(`✅ Dispatch notification sent to customer: ${customerEmail}`);
+    console.log(`[EMAIL] Dispatch notification sent to customer: ${customerEmail}`);
   } catch (error) {
-    console.error("❌ Error sending order dispatch email:", error);
+    console.error(
+      "[EMAIL] Error sending order dispatch email:",
+      error.code || error.message,
+    );
   }
 };
 

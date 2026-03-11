@@ -62,7 +62,7 @@ const Footer = () => {
 
               <li>
                 <Link
-                  to="/new-arrivals"
+                  to="/shop"
                   className="hover:text-white transition-colors"
                 >
                   New Arrivals

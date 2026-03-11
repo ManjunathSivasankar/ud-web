@@ -45,16 +45,16 @@ const ProductCard = ({ product }) => {
         )}
 
         {/* Actions - Always Visible */}
-        <div className="absolute inset-x-0 bottom-0 p-4 flex gap-2 z-20">
+        <div className="absolute inset-x-0 bottom-0 p-2 sm:p-4 flex gap-2 z-20">
           <button
             onClick={handleAddToCart}
-            className="flex-grow bg-primary text-white hover:bg-black py-3 px-0 flex items-center justify-center gap-2 text-[11px] font-heading font-bold tracking-widest uppercase rounded-md transition-colors shadow-lg"
+            className="flex-1 bg-primary text-white hover:bg-black py-2.5 sm:py-3 px-2 flex items-center justify-center gap-1.5 text-[9px] sm:text-[11px] font-heading font-bold tracking-[0.14em] uppercase rounded-md transition-colors shadow-lg whitespace-nowrap"
           >
             <ShoppingCart size={14} /> Add to Cart
           </button>
           <button
             onClick={handleBuyNow}
-            className="px-4 bg-white text-primary hover:bg-primary hover:text-white transition-colors duration-300 rounded-md shadow-lg flex items-center justify-center font-heading font-bold text-[11px] uppercase tracking-widest"
+            className="flex-1 px-2 sm:px-4 bg-white text-primary hover:bg-primary hover:text-white transition-colors duration-300 rounded-md shadow-lg flex items-center justify-center font-heading font-bold text-[9px] sm:text-[11px] uppercase tracking-[0.14em] whitespace-nowrap"
           >
             Buy Now
           </button>
