@@ -15,15 +15,31 @@ const createTransporter = () => {
     .replace(/^["']|["']$/g, "")
     .replace(/\s+/g, "");
 
+  // Gmail: use the built-in service preset (port 465 SSL) which is
+  // allowed on virtually all cloud hosting platforms.
+  // Manual port 587 / requireTLS is frequently blocked by providers.
+  const host = (process.env.SMTP_HOST || "").toLowerCase();
+  const user = (process.env.SMTP_USER || "").toLowerCase();
+  if (host.includes("gmail") || user.endsWith("@gmail.com")) {
+    return nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: smtpPass,
+      },
+    });
+  }
+
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST,
-    port: smtpPort, // 587 for TLS, 465 for SSL
+    port: smtpPort,
     secure: smtpPort === 465,
     requireTLS: smtpPort === 587,
     auth: {
       user: process.env.SMTP_USER,
       pass: smtpPass,
     },
+    tls: { rejectUnauthorized: false },
     connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT || 15000),
     greetingTimeout: Number(process.env.SMTP_GREETING_TIMEOUT || 10000),
     socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT || 20000),
@@ -345,6 +361,33 @@ const verifyEmailConfig = async () => {
   }
 };
 
+const sendTestEmail = async (to) => {
+  if (!hasSmtpConfig()) {
+    return { ok: false, error: "Missing SMTP env vars" };
+  }
+
+  try {
+    const transporter = createTransporter();
+    const target = to || process.env.ADMIN_EMAIL;
+
+    if (!target) {
+      return { ok: false, error: "Missing target email and ADMIN_EMAIL" };
+    }
+
+    const info = await transporter.sendMail({
+      from: `"UrbanDos" <${getFromAddress()}>`,
+      to: target,
+      subject: "UrbanDos SMTP Test",
+      text: "SMTP test successful from deployed backend.",
+      html: "<p><strong>SMTP test successful</strong> from deployed backend.</p>",
+    });
+
+    return { ok: true, messageId: info.messageId, accepted: info.accepted };
+  } catch (err) {
+    return { ok: false, error: err.message, code: err.code };
+  }
+};
+
 module.exports = {
   sendOrderInitiatedEmail,
   sendUserClaimsPaidEmail,
@@ -352,4 +395,5 @@ module.exports = {
   sendOrderDispatchedEmail,
   sendWhatsappAlert,
   verifyEmailConfig,
+  sendTestEmail,
 };

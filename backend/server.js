@@ -83,5 +83,18 @@ app.get("/api/health/email", async (req, res) => {
   res.status(result.ok ? 200 : 500).json(result);
 });
 
+// POST /api/health/email/test?token=...&to=...  – send test email from production
+app.post("/api/health/email/test", async (req, res) => {
+  const token = req.query.token || req.headers["x-health-token"];
+  if (!process.env.HEALTH_TOKEN || token !== process.env.HEALTH_TOKEN) {
+    return res.status(401).json({ ok: false, error: "Unauthorized" });
+  }
+
+  const to = req.query.to || req.body?.to;
+  const { sendTestEmail } = require("./services/notificationService");
+  const result = await sendTestEmail(to);
+  res.status(result.ok ? 200 : 500).json(result);
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log("running"));

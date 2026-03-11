@@ -102,7 +102,7 @@ const Hero = () => {
 
       {/* 2. Top/Center Hero Text & Marquee (Banners) */}
       <div className="w-full relative z-20 flex flex-col items-center">
-        <div className="text-center mb-0 px-6 absolute top-0 md:top-8 z-40 pointer-events-none mix-blend-difference w-full">
+        <div className="text-center mb-0 px-6 absolute top-0 md:top-8 z-40 pointer-events-none w-full">
           <motion.h1
             initial={!shouldReduceMotion ? { opacity: 0, y: 20 } : false}
             animate={!shouldReduceMotion ? { opacity: 1, y: 0 } : undefined}
@@ -113,13 +113,12 @@ const Hero = () => {
           </motion.h1>
         </div>
 
-        {/* Infinite Marquee Container */}
-        <div className="w-full overflow-hidden mt-32 md:mt-32 relative group cursor-grab active:cursor-grabbing">
-          {/* Gradient Edges to fade items out */}
-          <div className="absolute inset-y-0 left-0 w-8 md:w-32 bg-gradient-to-r from-primary to-transparent z-10 pointer-events-none"></div>
-          <div className="absolute inset-y-0 right-0 w-8 md:w-32 bg-gradient-to-l from-primary to-transparent z-10 pointer-events-none"></div>
-
-          {collections?.length > 0 && !isMobile ? (
+        {/* Desktop: Infinite Marquee inside overflow-hidden for seamless loop */}
+        {collections?.length > 0 && !isMobile ? (
+          <div className="w-full overflow-hidden mt-32 md:mt-32 relative group cursor-grab active:cursor-grabbing">
+            {/* Gradient Edges */}
+            <div className="absolute inset-y-0 left-0 w-8 md:w-32 bg-gradient-to-r from-primary to-transparent z-10 pointer-events-none"></div>
+            <div className="absolute inset-y-0 right-0 w-8 md:w-32 bg-gradient-to-l from-primary to-transparent z-10 pointer-events-none"></div>
             <motion.div
               className="flex gap-4 md:gap-6 w-max pl-6"
               drag="x"
@@ -127,82 +126,66 @@ const Hero = () => {
                 right: 0,
                 left: -((400 + 24) * collections.length),
               }}
-              animate={{ x: [0, -((400 + 24) * collections.length)] }} // Item width (384px or 400px) + gap
+              animate={{ x: [0, -((400 + 24) * collections.length)] }}
               transition={{
                 x: {
                   repeat: Infinity,
                   repeatType: "loop",
-                  duration: 35, // Adjust speed here
+                  duration: 35,
                   ease: "linear",
                 },
               }}
-              style={{
-                // Pause on hover
-                animationPlayState: "inherit",
-              }}
-              whileHover={{
-                animationPlayState: "paused",
-              }}
-              whileTap={{ animationPlayState: "paused", cursor: "grabbing" }}
+              whileTap={{ cursor: "grabbing" }}
             >
-              {/* Note: Pausing framer-motion declarative animations perfectly requires useAnimation. For pure CSS marquee pause it's easier, but since framer is already used, we stick to the continuous smooth pan. The hover effect below adds visual focus. */}
-              {marqueeItems.map((item, index) => {
-                const content = (
-                  <div
-                    className={`relative w-[240px] h-[340px] md:w-[400px] md:h-[500px] rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_0_40px_rgba(255,255,255,0.2)] transition-all duration-500 overflow-hidden transform hover:-translate-y-2 flex-shrink-0 group/card bg-secondary/20`}
-                  >
+              {marqueeItems.map((item, index) => (
+                <Link
+                  to={`/category/${item.collectionId || item.name.toLowerCase().replace(/\s+/g, "-")}`}
+                  key={`${item._id || item.name}-${index}`}
+                  className="block outline-none"
+                >
+                  <div className="relative w-[240px] h-[340px] md:w-[400px] md:h-[500px] rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_0_40px_rgba(255,255,255,0.2)] transition-all duration-500 transform hover:-translate-y-2 flex-shrink-0 group/card bg-secondary/20">
                     <img
                       src={item.image || "https://via.placeholder.com/600x800"}
                       alt={item.name}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-105"
                     />
-
-                    {/* Always visible bottom gradient for legibility */}
-                    <div
-                      className={`absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none`}
-                    />
-
-                    {/* Hover Overlay Title & View Button */}
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/card:opacity-100 backdrop-blur-[2px] transition-opacity duration-300 flex flex-col justify-center items-center p-6 text-center">
-                      <h3 className="text-white font-heading font-black text-2xl md:text-3xl uppercase tracking-tighter mb-4 translate-y-4 group-hover/card:translate-y-0 transition-transform duration-300">
-                        {item.name}
-                      </h3>
-                      <span className="px-6 py-2 border border-white/30 rounded-full text-white text-xs font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-colors duration-300 flex items-center gap-2 translate-y-4 group-hover/card:translate-y-0 transition-transform duration-300 delay-75">
-                        View Collection <ArrowRight size={14} />
-                      </span>
-                    </div>
-
-                    {/* Default Title (visible when not hovered) */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none" />
                     <div className="absolute inset-0 flex items-end p-6 pointer-events-none opacity-100 group-hover/card:opacity-0 transition-opacity duration-300">
                       <h3 className="text-white font-heading font-black text-xl uppercase tracking-tighter drop-shadow-lg">
                         {item.name}
                       </h3>
                     </div>
                   </div>
-                );
-
-                return (
-                  <Link
-                    to={`/category/${item.collectionId || item.name.toLowerCase().replace(/\s+/g, "-")}`}
-                    key={`${item._id || item.name}-${index}`}
-                    className="block outline-none"
-                  >
-                    {content}
-                  </Link>
-                );
-              })}
+                </Link>
+              ))}
             </motion.div>
-          ) : null}
+          </div>
+        ) : null}
 
-          {collections?.length > 0 && isMobile ? (
-            <div className="flex gap-4 pl-4 pr-4 overflow-x-auto snap-x snap-mandatory no-scrollbar">
-              {collections.map((item, index) => (
+        {/* Mobile: lightweight auto-marquee */}
+        {collections?.length > 0 && isMobile ? (
+          <div className="w-full mt-32 relative overflow-hidden">
+            <div className="absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-primary to-transparent z-10 pointer-events-none" />
+            <div className="absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-primary to-transparent z-10 pointer-events-none" />
+            <motion.div
+              className="flex gap-4 w-max pl-4"
+              animate={{ x: [0, -((210 + 16) * collections.length)] }}
+              transition={{
+                x: {
+                  repeat: Infinity,
+                  repeatType: "loop",
+                  duration: 22,
+                  ease: "linear",
+                },
+              }}
+            >
+              {marqueeItems.map((item, index) => (
                 <Link
                   to={`/category/${item.collectionId || item.name.toLowerCase().replace(/\s+/g, "-")}`}
                   key={`${item._id || item.name}-${index}`}
-                  className="block outline-none snap-start"
+                  className="block outline-none flex-shrink-0"
                 >
-                  <div className="relative w-[210px] h-[300px] rounded-2xl overflow-hidden shadow-lg flex-shrink-0 bg-secondary/20">
+                  <div className="relative w-[210px] h-[300px] rounded-2xl overflow-hidden shadow-lg bg-secondary/20">
                     <img
                       src={item.image || "https://via.placeholder.com/600x800"}
                       alt={item.name}
@@ -217,9 +200,9 @@ const Hero = () => {
                   </div>
                 </Link>
               ))}
-            </div>
-          ) : null}
-        </div>
+            </motion.div>
+          </div>
+        ) : null}
       </div>
 
       {/* Absolute CTA button (bottom left next to social) for mobile fallback */}
