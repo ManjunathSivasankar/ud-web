@@ -82,8 +82,101 @@ const getFromAddress = () => {
   return process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER;
 };
 
+const hasResendConfig = () => {
+  return !!process.env.RESEND_API_KEY && !!process.env.RESEND_FROM_EMAIL;
+};
+
+const hasEmailConfig = () => {
+  return hasResendConfig() || hasSmtpConfig();
+};
+
+const sendViaResend = async (mailOptions) => {
+  const timeoutMs = Number(process.env.RESEND_TIMEOUT_MS || 15000);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: process.env.RESEND_FROM_EMAIL,
+        to: Array.isArray(mailOptions.to) ? mailOptions.to : [mailOptions.to],
+        subject: mailOptions.subject,
+        html: mailOptions.html,
+        text: mailOptions.text,
+      }),
+      signal: controller.signal,
+    });
+
+    const bodyText = await response.text();
+    let body = {};
+    try {
+      body = bodyText ? JSON.parse(bodyText) : {};
+    } catch {
+      body = { raw: bodyText };
+    }
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        error: body.message || "Resend API request failed",
+        code: `RESEND_${response.status}`,
+      };
+    }
+
+    return { ok: true, id: body.id };
+  } catch (error) {
+    if (error.name === "AbortError") {
+      return { ok: false, error: "Resend timeout", code: "RESEND_TIMEOUT" };
+    }
+    return { ok: false, error: error.message, code: error.code };
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+const sendEmail = async (mailOptions, contextLabel) => {
+  if (hasResendConfig()) {
+    const resendResult = await sendViaResend(mailOptions);
+    if (resendResult.ok) {
+      console.log(`[EMAIL] ${contextLabel} sent via Resend.`);
+      return { ok: true, provider: "resend", id: resendResult.id };
+    }
+
+    console.error(
+      `[EMAIL] Resend failed for ${contextLabel}: ${resendResult.code || "ERROR"} ${resendResult.error}`,
+    );
+    if (!hasSmtpConfig()) {
+      return { ok: false, provider: "resend", ...resendResult };
+    }
+    console.warn(`[EMAIL] Falling back to SMTP for ${contextLabel}.`);
+  }
+
+  if (!hasSmtpConfig()) {
+    return { ok: false, error: "Missing email provider configuration" };
+  }
+
+  const transporter = getTransporter();
+  const info = await transporter.sendMail(mailOptions);
+  return {
+    ok: true,
+    provider: "smtp",
+    messageId: info.messageId,
+    accepted: info.accepted,
+  };
+};
+
 // Verify transporter on startup
 const verifyConnection = async () => {
+  if (hasResendConfig()) {
+    console.log("[EMAIL] Resend API is configured for outgoing email.");
+    return;
+  }
+
   if (!hasSmtpConfig()) return;
 
   const transporter = getTransporter();
@@ -136,9 +229,7 @@ const sendWhatsappAlert = async (message) => {
 
 const sendOrderInitiatedEmail = async (order) => {
   try {
-    if (!hasSmtpConfig()) return;
-
-    const transporter = getTransporter();
+    if (!hasEmailConfig()) return;
     const adminEmail = process.env.ADMIN_EMAIL;
 
     if (!adminEmail) {
@@ -184,8 +275,7 @@ const sendOrderInitiatedEmail = async (order) => {
       `,
     };
 
-    await transporter.sendMail(mailOptions);
-    console.log("[EMAIL] Order initiated email sent to admin.");
+    await sendEmail(mailOptions, "order initiated email");
   } catch (error) {
     console.error(
       "[EMAIL] Error sending order initiated email:",
@@ -196,9 +286,7 @@ const sendOrderInitiatedEmail = async (order) => {
 
 const sendUserClaimsPaidEmail = async (order) => {
   try {
-    if (!hasSmtpConfig()) return;
-
-    const transporter = getTransporter();
+    if (!hasEmailConfig()) return;
     const adminEmail = process.env.ADMIN_EMAIL;
 
     if (!adminEmail) {
@@ -233,8 +321,7 @@ const sendUserClaimsPaidEmail = async (order) => {
       `,
     };
 
-    await transporter.sendMail(mailOptions);
-    console.log("[EMAIL] Payment-claim email sent to admin.");
+    await sendEmail(mailOptions, "payment-claim email");
   } catch (error) {
     console.error(
       "[EMAIL] Error sending user claims paid email:",
@@ -245,9 +332,7 @@ const sendUserClaimsPaidEmail = async (order) => {
 
 const sendOrderConfirmedEmail = async (order) => {
   try {
-    if (!hasSmtpConfig()) return;
-
-    const transporter = getTransporter();
+    if (!hasEmailConfig()) return;
     const customerEmail =
       order.customerDetails?.email || order.shippingAddress?.email;
 
@@ -276,8 +361,7 @@ const sendOrderConfirmedEmail = async (order) => {
       `,
     };
 
-    await transporter.sendMail(mailOptions);
-    console.log(`[EMAIL] Confirmation email sent to customer: ${customerEmail}`);
+    await sendEmail(mailOptions, "order confirmation email");
   } catch (error) {
     console.error(
       "[EMAIL] Error sending order confirmation email:",
@@ -288,9 +372,7 @@ const sendOrderConfirmedEmail = async (order) => {
 
 const sendOrderDispatchedEmail = async (order) => {
   try {
-    if (!hasSmtpConfig()) return;
-
-    const transporter = getTransporter();
+    if (!hasEmailConfig()) return;
     const customerEmail =
       order.customerDetails?.email || order.shippingAddress?.email;
 
@@ -318,8 +400,7 @@ const sendOrderDispatchedEmail = async (order) => {
       `,
     };
 
-    await transporter.sendMail(mailOptions);
-    console.log(`[EMAIL] Dispatch notification sent to customer: ${customerEmail}`);
+    await sendEmail(mailOptions, "dispatch notification email");
   } catch (error) {
     console.error(
       "[EMAIL] Error sending order dispatch email:",
@@ -330,16 +411,18 @@ const sendOrderDispatchedEmail = async (order) => {
 
 // Export for health-check route in server.js
 const verifyEmailConfig = async () => {
-  if (!hasSmtpConfig()) {
+  if (!hasEmailConfig()) {
     return {
       ok: false,
-      error: "Missing SMTP env vars",
+      error: "Missing email provider configuration",
       config: {
         host: process.env.SMTP_HOST || "(not set)",
         port: process.env.SMTP_PORT || "(not set)",
         user: process.env.SMTP_USER || "(not set)",
         adminEmail: process.env.ADMIN_EMAIL || "(not set)",
         passSet: !!(process.env.SMTP_PASS || "").trim(),
+        resendKeySet: !!process.env.RESEND_API_KEY,
+        resendFrom: process.env.RESEND_FROM_EMAIL || "(not set)",
       },
     };
   }
@@ -349,45 +432,48 @@ const verifyEmailConfig = async () => {
   return {
     ok: true,
     status: "Config loaded. Use /api/health/email/test to send a test email.",
+    provider: hasResendConfig() ? "resend" : "smtp",
     config: {
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT || 587),
       user: process.env.SMTP_USER,
       adminEmail: process.env.ADMIN_EMAIL,
       passSet: !!(process.env.SMTP_PASS || "").trim(),
+      resendKeySet: !!process.env.RESEND_API_KEY,
+      resendFrom: process.env.RESEND_FROM_EMAIL || "(not set)",
     },
   };
 };
 
 const sendTestEmail = async (to) => {
-  if (!hasSmtpConfig()) {
-    return { ok: false, error: "Missing SMTP env vars" };
+  if (!hasEmailConfig()) {
+    return { ok: false, error: "Missing email provider configuration" };
   }
 
   try {
-    const transporter = createTransporter();
     const target = to || process.env.ADMIN_EMAIL;
 
     if (!target) {
       return { ok: false, error: "Missing target email and ADMIN_EMAIL" };
     }
 
-    // Wrap in timeout (30 seconds max for sending)
-    const emailPromise = transporter.sendMail({
+    const emailPromise = sendEmail(
+      {
       from: `"UrbanDos" <${getFromAddress()}>`,
       to: target,
       subject: "UrbanDos SMTP Test",
       text: "SMTP test successful from deployed backend.",
       html: "<p><strong>SMTP test successful</strong> from deployed backend.</p>",
-    });
+      },
+      "health test email",
+    );
 
     const timeoutPromise = new Promise((_, reject) =>
       setTimeout(() => reject(new Error("Email send timeout (30s)")), 30000),
     );
 
-    const info = await Promise.race([emailPromise, timeoutPromise]);
-
-    return { ok: true, messageId: info.messageId, accepted: info.accepted };
+    const result = await Promise.race([emailPromise, timeoutPromise]);
+    return { ok: true, ...result };
   } catch (err) {
     return { ok: false, error: err.message, code: err.code };
   }
