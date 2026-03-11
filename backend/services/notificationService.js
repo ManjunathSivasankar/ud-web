@@ -333,32 +333,19 @@ const verifyEmailConfig = async () => {
     };
   }
 
-  const transporter = createTransporter();
-  try {
-    await transporter.verify();
-    return {
-      ok: true,
-      config: {
-        host: process.env.SMTP_HOST,
-        port: Number(process.env.SMTP_PORT || 587),
-        user: process.env.SMTP_USER,
-        adminEmail: process.env.ADMIN_EMAIL,
-      },
-    };
-  } catch (err) {
-    return {
-      ok: false,
-      error: err.message,
-      code: err.code,
-      config: {
-        host: process.env.SMTP_HOST,
-        port: Number(process.env.SMTP_PORT || 587),
-        user: process.env.SMTP_USER,
-        adminEmail: process.env.ADMIN_EMAIL,
-        passSet: !!(process.env.SMTP_PASS || "").trim(),
-      },
-    };
-  }
+  // Just return config without verifying connection (verify() times out on cloud providers).
+  // Use /api/health/email/test to actually send a test email instead.
+  return {
+    ok: true,
+    status: "Config loaded. Use /api/health/email/test to send a test email.",
+    config: {
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT || 587),
+      user: process.env.SMTP_USER,
+      adminEmail: process.env.ADMIN_EMAIL,
+      passSet: !!(process.env.SMTP_PASS || "").trim(),
+    },
+  };
 };
 
 const sendTestEmail = async (to) => {
